@@ -35,6 +35,38 @@ namespace sqltest
             }
         }
 
-        // Additional CRUD methods (Update, Delete, Get, etc.) can be added here
+        public async Task<List<Student>> GetAllStudentsAsync()
+        {
+            var students = new List<Student>();
+
+            try
+            {
+                await using var dataSource = NpgsqlDataSource.Create(connectionString);
+                await using var cmd = dataSource.CreateCommand("SELECT * FROM students");
+                await using var reader = await cmd.ExecuteReaderAsync();
+
+                while (await reader.ReadAsync())
+                {
+                    students.Add(new Student
+                    {
+                        Id = reader.GetInt32(0),
+                        FirstName = reader.GetString(1),
+                        LastName = reader.GetString(2),
+                        Email = reader.GetString(3),
+                        RegistrationDate = reader.GetDateTime(4)
+                    });
+                }
+            }
+            catch (NpgsqlException ex)
+            {
+                Console.WriteLine($"Database error: {ex.Message}");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"An error occurred: {ex.Message}");
+            }
+
+            return students;
+        }
     }
 }

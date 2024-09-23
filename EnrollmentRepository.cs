@@ -39,7 +39,36 @@ namespace sqltest
                 Console.WriteLine($"An error occurred: {ex.Message}");
             }
         }
+        public async Task<List<Enrollment>> GetAllEnrollmentsAsync()
+        {
+            var enrollments = new List<Enrollment>();
 
-        // Additional CRUD methods (Update, Delete, Get, etc.) can be added here
+            try
+            {
+                await using var dataSource = NpgsqlDataSource.Create(connectionString);
+                await using var cmd = dataSource.CreateCommand("SELECT * FROM enrollments");
+                await using var reader = await cmd.ExecuteReaderAsync();
+
+                while (await reader.ReadAsync())
+                {
+                    enrollments.Add(new Enrollment
+                    {
+                        StudentId = reader.GetInt32(0),
+                        CourseId = reader.GetInt32(1),
+                        EnrolledDate = reader.GetDateTime(2)
+                    });
+                }
+            }
+            catch (NpgsqlException ex)
+            {
+                Console.WriteLine($"Database error: {ex.Message}");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"An error occurred: {ex.Message}");
+            }
+
+            return enrollments;
+        }
     }
 }

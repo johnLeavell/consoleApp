@@ -6,6 +6,11 @@ namespace sqltest.Helpers
     {
         public static bool CheckForSpecialCommands(string input)
         {
+            if (input == null)
+            {
+                return false;
+            }
+
             if (string.Equals(input, "menu", StringComparison.OrdinalIgnoreCase))
             {
                 return true;
