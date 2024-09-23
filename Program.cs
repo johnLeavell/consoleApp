@@ -2,6 +2,7 @@
 using System.Threading.Tasks;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Spectre.Console;
 using sqltest.Helpers;
 
 namespace sqltest
@@ -16,9 +17,6 @@ namespace sqltest
                 .AddJsonFile("appsettings.json", optional: true, reloadOnChange: true)
                 .AddEnvironmentVariables()
                 .Build();
-
-            // Debug output to check connection string
-            Console.WriteLine("Connection String from Configuration: " + configuration.GetConnectionString("PostgresConnection"));
 
             // Setup dependency injection
             var services = new ServiceCollection()
@@ -39,7 +37,7 @@ namespace sqltest
             }
             else
             {
-                Console.WriteLine("Failed to create DatabaseOperations service.");
+                AnsiConsole.MarkupLine("[red]Failed to create DatabaseOperations service.[/]");
                 return;
             }
 
@@ -49,14 +47,15 @@ namespace sqltest
 
             if (studentRepo == null || courseRepo == null || enrollmentRepo == null)
             {
-                Console.WriteLine("Failed to create necessary services.");
+                AnsiConsole.MarkupLine("[red]Failed to create necessary services.[/]");
                 return;
             }
 
             // Command-line interface loop
             while (true)
             {
-                ShowMainMenu();
+                ShowMainMenuHeading();
+                ShowMainMenuOptions();
 
                 var choice = Console.ReadLine() ?? string.Empty;
                 if (InputHelper.CheckForSpecialCommands(choice))
@@ -87,42 +86,55 @@ namespace sqltest
                     case "7":
                         return;
                     default:
-                        Console.WriteLine("Invalid option. Please choose again.");
+                        AnsiConsole.MarkupLine("[red]Invalid option. Please choose again.[/]");
                         break;
                 }
+
+                // Pause before showing the main menu again
+                AnsiConsole.MarkupLine("[grey]Press any key to return to the main menu...[/]");
+                Console.ReadKey();
             }
         }
 
-        private static void ShowMainMenu()
+        private static void ShowMainMenuHeading()
         {
-            Console.WriteLine("Choose an option:");
-            Console.WriteLine("1. Add a new student");
-            Console.WriteLine("2. Add a new course");
-            Console.WriteLine("3. Enroll a student in a course");
-            Console.WriteLine("4. View all students");
-            Console.WriteLine("5. View all courses");
-            Console.WriteLine("6. View all enrollments");
-            Console.WriteLine("7. Exit");
-            Console.Write("Option: ");
+            AnsiConsole.Clear();
+            AnsiConsole.Write(
+                new FigletText("Main Menu")
+                    .Centered()
+                    .Color(Color.Green));
+        }
+
+        private static void ShowMainMenuOptions()
+        {
+            AnsiConsole.MarkupLine("Choose an option:");
+            AnsiConsole.MarkupLine("1. [green]Add a new student[/]");
+            AnsiConsole.MarkupLine("2. [green]Add a new course[/]");
+            AnsiConsole.MarkupLine("3. [green]Enroll a student in a course[/]");
+            AnsiConsole.MarkupLine("4. [green]View all students[/]");
+            AnsiConsole.MarkupLine("5. [green]View all courses[/]");
+            AnsiConsole.MarkupLine("6. [green]View all enrollments[/]");
+            AnsiConsole.MarkupLine("7. [green]Exit[/]");
+            AnsiConsole.Markup("Option: ");
         }
 
         private static async Task AddStudentAsync(StudentRepository studentRepo)
         {
-            Console.Write("Enter first name (or type 'menu' to return to main menu): ");
+            AnsiConsole.Markup("Enter first name (or type 'menu' to return to main menu): ");
             var firstName = Console.ReadLine() ?? string.Empty;
             if (InputHelper.CheckForSpecialCommands(firstName))
             {
                 return;
             }
 
-            Console.Write("Enter last name (or type 'menu' to return to main menu): ");
+            AnsiConsole.Markup("Enter last name (or type 'menu' to return to main menu): ");
             var lastName = Console.ReadLine() ?? string.Empty;
             if (InputHelper.CheckForSpecialCommands(lastName))
             {
                 return;
             }
 
-            Console.Write("Enter email (or type 'menu' to return to main menu): ");
+            AnsiConsole.Markup("Enter email (or type 'menu' to return to main menu): ");
             var email = Console.ReadLine() ?? string.Empty;
             if (InputHelper.CheckForSpecialCommands(email))
             {
@@ -132,7 +144,7 @@ namespace sqltest
             // Ensure that these values are not null
             if (string.IsNullOrEmpty(firstName) || string.IsNullOrEmpty(lastName) || string.IsNullOrEmpty(email))
             {
-                Console.WriteLine("Invalid input. All fields are required.");
+                AnsiConsole.MarkupLine("[red]Invalid input. All fields are required.[/]");
                 return;
             }
 
@@ -145,19 +157,19 @@ namespace sqltest
             };
 
             await studentRepo.AddStudentAsync(newStudent);
-            Console.WriteLine("Student added successfully.");
+            AnsiConsole.MarkupLine("[green]Student added successfully.[/]");
         }
 
         private static async Task AddCourseAsync(CourseRepository courseRepo)
         {
-            Console.Write("Enter course name (or type 'menu' to return to main menu): ");
+            AnsiConsole.Markup("Enter course name (or type 'menu' to return to main menu): ");
             var name = Console.ReadLine() ?? string.Empty;
             if (InputHelper.CheckForSpecialCommands(name))
             {
                 return;
             }
 
-            Console.Write("Enter course duration (e.g., 2:00:00 for 2 hours, or type 'menu' to return to main menu): ");
+            AnsiConsole.Markup("Enter course duration (e.g., 2:00:00 for 2 hours, or type 'menu' to return to main menu): ");
             var durationInput = Console.ReadLine() ?? string.Empty;
             if (InputHelper.CheckForSpecialCommands(durationInput))
             {
@@ -166,18 +178,18 @@ namespace sqltest
 
             if (!TimeSpan.TryParse(durationInput, out var duration))
             {
-                Console.WriteLine("Invalid duration format.");
+                AnsiConsole.MarkupLine("[red]Invalid duration format.[/]");
                 return;
             }
 
-            Console.Write("Enter course description (or type 'menu' to return to main menu): ");
+            AnsiConsole.Markup("Enter course description (or type 'menu' to return to main menu): ");
             var description = Console.ReadLine() ?? string.Empty;
             if (InputHelper.CheckForSpecialCommands(description))
             {
                 return;
             }
 
-            Console.Write("Enter course credits (or type 'menu' to return to main menu): ");
+            AnsiConsole.Markup("Enter course credits (or type 'menu' to return to main menu): ");
             var creditsInput = Console.ReadLine() ?? string.Empty;
             if (InputHelper.CheckForSpecialCommands(creditsInput))
             {
@@ -186,7 +198,7 @@ namespace sqltest
 
             if (!int.TryParse(creditsInput, out var credits))
             {
-                Console.WriteLine("Invalid credits format.");
+                AnsiConsole.MarkupLine("[red]Invalid credits format.[/]");
                 return;
             }
 
@@ -199,12 +211,12 @@ namespace sqltest
             };
 
             await courseRepo.AddCourseAsync(newCourse);
-            Console.WriteLine("Course added successfully.");
+            AnsiConsole.MarkupLine("[green]Course added successfully.[/]");
         }
 
         private static async Task EnrollStudentAsync(EnrollmentRepository enrollmentRepo, StudentRepository studentRepo, CourseRepository courseRepo)
         {
-            Console.Write("Enter student ID (or type 'menu' to return to main menu): ");
+            AnsiConsole.Markup("Enter student ID (or type 'menu' to return to main menu): ");
             var studentIdInput = Console.ReadLine() ?? string.Empty;
             if (InputHelper.CheckForSpecialCommands(studentIdInput))
             {
@@ -213,11 +225,11 @@ namespace sqltest
 
             if (!int.TryParse(studentIdInput, out var studentId))
             {
-                Console.WriteLine("Invalid student ID.");
+                AnsiConsole.MarkupLine("[red]Invalid student ID.[/]");
                 return;
             }
 
-            Console.Write("Enter course ID (or type 'menu' to return to main menu): ");
+            AnsiConsole.Markup("Enter course ID (or type 'menu' to return to main menu): ");
             var courseIdInput = Console.ReadLine() ?? string.Empty;
             if (InputHelper.CheckForSpecialCommands(courseIdInput))
             {
@@ -226,7 +238,7 @@ namespace sqltest
 
             if (!int.TryParse(courseIdInput, out var courseId))
             {
-                Console.WriteLine("Invalid course ID.");
+                AnsiConsole.MarkupLine("[red]Invalid course ID.[/]");
                 return;
             }
 
@@ -238,49 +250,77 @@ namespace sqltest
             };
 
             await enrollmentRepo.EnrollStudentAsync(enrollment);
-            Console.WriteLine("Student enrolled successfully.");
+            AnsiConsole.MarkupLine("[green]Student enrolled successfully.[/]");
         }
 
         private static async Task ViewAllStudentsAsync(StudentRepository studentRepo)
         {
             var students = await studentRepo.GetAllStudentsAsync();
-            if(students.Count == 0)
+            if (students.Count == 0)
             {
-                Console.WriteLine("There are no students to view");
+                AnsiConsole.MarkupLine("[yellow]There are no students to view.[/]");
                 return;
-            }    
+            }
+
+            var table = new Table();
+            table.AddColumn("ID");
+            table.AddColumn("First Name");
+            table.AddColumn("Last Name");
+            table.AddColumn("Email");
+            table.AddColumn("Registration Date");
+
             foreach (var student in students)
             {
-                Console.WriteLine($"{student.Id}: {student.FirstName} {student.LastName} - {student.Email} - {student.RegistrationDate}");
+                table.AddRow(student.Id.ToString(), student.FirstName, student.LastName, student.Email, student.RegistrationDate.ToString());
             }
+
+            AnsiConsole.Write(table);
         }
 
         private static async Task ViewAllCoursesAsync(CourseRepository courseRepo)
         {
             var courses = await courseRepo.GetAllCoursesAsync();
-            if(courses.Count == 0)
+            if (courses.Count == 0)
             {
-                Console.WriteLine("There are no courses to view.");
+                AnsiConsole.MarkupLine("[yellow]There are no courses to view.[/]");
                 return;
             }
+
+            var table = new Table();
+            table.AddColumn("ID");
+            table.AddColumn("Name");
+            table.AddColumn("Duration");
+            table.AddColumn("Description");
+            table.AddColumn("Credits");
+
             foreach (var course in courses)
             {
-                Console.WriteLine($"{course.Id}: {course.Name} - {course.Duration} - {course.Description} - {course.Credits} credits");
+                table.AddRow(course.Id.ToString(), course.Name, course.Duration.ToString(), course.Description, course.Credits.ToString());
             }
+
+            AnsiConsole.Write(table);
         }
 
         private static async Task ViewAllEnrollmentsAsync(EnrollmentRepository enrollmentRepo)
         {
             var enrollments = await enrollmentRepo.GetAllEnrollmentsAsync();
-            if(enrollments.Count == 0)
+            if (enrollments.Count == 0)
             {
-                Console.WriteLine("There are no enrollments to view.");
+                AnsiConsole.MarkupLine("[yellow]There are no enrollments to view.[/]");
                 return;
             }
+
+            var table = new Table();
+            table.AddColumn("Student ID");
+            table.AddColumn("Course ID");
+            table.AddColumn("Enrolled Date");
+
             foreach (var enrollment in enrollments)
             {
-                Console.WriteLine($"Student ID: {enrollment.StudentId}, Course ID: {enrollment.CourseId}, Enrolled Date: {enrollment.EnrolledDate}");
+                table.AddRow(enrollment.StudentId.ToString(), enrollment.CourseId.ToString(), enrollment.EnrolledDate.ToString());
             }
+
+            AnsiConsole.Write(table);
         }
     }
 }
