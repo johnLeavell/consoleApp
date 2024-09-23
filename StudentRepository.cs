@@ -68,5 +68,37 @@ namespace sqltest
 
             return students;
         }
+
+        public async Task<Studnet?> GetStudentByIdAsync(int id)
+        {
+            try
+            {
+                await using var dataSource = NpgsqlDataSource.Create(connectionString);
+                await using var cmd = dataSource.CreateCommand("SELECT * FROM students WHERE id = @Id");
+                cmd.Parameters.AddWithValue("Id", id);
+                await using var reader = await cmd.ExecuteReaderAsync();
+
+                if(await reader.ReadAsync())
+                {
+                    return new Student
+                    {
+                        Id = reader.GetInt32(0),
+                        FirstName = reader.GetString(1),
+                        LastName = reader.GetString(2),
+                        Email = reader.GetString(3),
+                        RegistrationDate = reader.GetDateTime(4)
+                    };
+                }
+            }
+            catch (NpgsqlException ex)
+            {
+                Console.WriteLine($"Databse error: {ex.Message}");
+            }
+            catch(Exception ex)
+            {
+                Console.WriteLine($"An error occured: {ex.Message}");
+            }
+            return null;
+        }
     }
 }
