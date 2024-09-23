@@ -74,5 +74,37 @@ namespace sqltest
 
             return courses;
         }
+
+        public async Task<Course?> GetCourseByIdAsync(int id)
+        {
+            try
+            {
+                await using var dataSource = NpgsqlDataSource.Create(connectionString);
+                await using var cmd = dataSource.CreateCommand("SELECT * FROM courses WHERE id = @Id");
+                cmd.Parameters.AddWithValue("Id", id);
+                await using var reader = await cmd.ExecuteReaderAsync();
+
+                if (await reader.ReadAsync())
+                {
+                    return new Course
+                    {
+                        Id = reader.GetInt32(0),
+                        Name = reader.GetString(1),
+                        Duration = reader.GetTimeSpan(2),
+                        Description = reader.GetString(3),
+                        Credits = reader.GetInt32(4)
+                    };
+                }
+            }
+            catch (NpgsqlException ex)
+            {
+                Console.WriteLine($"Database error: {ex.Message}");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"An error occurred: {ex.Message}");
+            }
+            return null;
+        }
     }
 }
