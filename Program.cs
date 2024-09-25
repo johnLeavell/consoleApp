@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Threading.Tasks;
+using System.Collections.Generic;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Spectre.Console;
@@ -84,6 +85,24 @@ namespace sqltest
                         await ViewAllEnrollmentsAsync(enrollmentRepo);
                         break;
                     case "7":
+                        await SearchStudentByIdAsync(studentRepo);
+                        break;
+                    case "8":
+                        await SearchStudentsByNameAsync(studentRepo);
+                        break;
+                    case "9":
+                        await UpdateStudentAsync(studentRepo);
+                        break;
+                    case "10":
+                        await DeleteStudentAsync(studentRepo);
+                        break;
+                    case "11":
+                        await ExportStudentsToCsvAsync(studentRepo);
+                        break;
+                    case "12":
+                        await ExportStudentsToJsonAsync(studentRepo);
+                        break;
+                    case "13":
                         return;
                     default:
                         AnsiConsole.MarkupLine("[red]Invalid option. Please choose again.[/]");
@@ -114,7 +133,13 @@ namespace sqltest
             AnsiConsole.MarkupLine("4. [green]View all students[/]");
             AnsiConsole.MarkupLine("5. [green]View all courses[/]");
             AnsiConsole.MarkupLine("6. [green]View all enrollments[/]");
-            AnsiConsole.MarkupLine("7. [green]Exit[/]");
+            AnsiConsole.MarkupLine("7. [green]Search for a student by ID[/]");
+            AnsiConsole.MarkupLine("8. [green]Search for students by name[/]");
+            AnsiConsole.MarkupLine("9. [green]Update a student[/]");
+            AnsiConsole.MarkupLine("10. [green]Delete a student[/]");
+            AnsiConsole.MarkupLine("11. [green]Export students to CSV[/]");
+            AnsiConsole.MarkupLine("12. [green]Export students to JSON[/]");
+            AnsiConsole.MarkupLine("13. [green]Exit[/]");
             AnsiConsole.Markup("Option: ");
         }
 
@@ -386,6 +411,170 @@ namespace sqltest
             }
 
             AnsiConsole.Write(table);
+        }
+
+        private static async Task SearchStudentByIdAsync(StudentRepository studentRepo)
+        {
+            AnsiConsole.Markup("Enter student ID: ");
+            var input = Console.ReadLine() ?? string.Empty;
+            if (InputHelper.CheckForSpecialCommands(input))
+            {
+                return;
+            }
+
+            if (!int.TryParse(input, out var studentId))
+            {
+                AnsiConsole.MarkupLine("[red]Invalid student ID.[/]");
+                return;
+            }
+
+            var student = await studentRepo.GetStudentByIdAsync(studentId);
+            if (student == null)
+            {
+                AnsiConsole.MarkupLine("[yellow]Student not found.[/]");
+            }
+            else
+            {
+                var table = new Table();
+                table.AddColumn("ID");
+                table.AddColumn("First Name");
+                table.AddColumn("Last Name");
+                table.AddColumn("Email");
+                table.AddColumn("Registration Date");
+                table.AddRow(student.Id.ToString(), student.FirstName, student.LastName, student.Email, student.RegistrationDate.ToString());
+
+                AnsiConsole.Write(table);
+            }
+        }
+
+        private static async Task SearchStudentsByNameAsync(StudentRepository studentRepo)
+        {
+            AnsiConsole.Markup("Enter student name: ");
+            var name = Console.ReadLine() ?? string.Empty;
+            if (InputHelper.CheckForSpecialCommands(name))
+            {
+                return;
+            }
+
+            var students = await studentRepo.SearchStudentsByNameAsync(name);
+            if (students.Count == 0)
+            {
+                AnsiConsole.MarkupLine("[yellow]No students found with the given name.[/]");
+                return;
+            }
+
+            var table = new Table();
+            table.AddColumn("ID");
+            table.AddColumn("First Name");
+            table.AddColumn("Last Name");
+            table.AddColumn("Email");
+            table.AddColumn("Registration Date");
+
+            foreach (var student in students)
+            {
+                table.AddRow(student.Id.ToString(), student.FirstName, student.LastName, student.Email, student.RegistrationDate.ToString());
+            }
+
+            AnsiConsole.Write(table);
+        }
+
+        private static async Task UpdateStudentAsync(StudentRepository studentRepo)
+        {
+            AnsiConsole.Markup("Enter student ID to update: ");
+            var input = Console.ReadLine() ?? string.Empty;
+            if (InputHelper.CheckForSpecialCommands(input))
+            {
+                return;
+            }
+
+            if (!int.TryParse(input, out var studentId))
+            {
+                AnsiConsole.MarkupLine("[red]Invalid student ID.[/]");
+                return;
+            }
+
+            var student = await studentRepo.GetStudentByIdAsync(studentId);
+            if (student == null)
+            {
+                AnsiConsole.MarkupLine("[yellow]Student not found.[/]");
+                return;
+            }
+
+            AnsiConsole.Markup($"Enter new first name (current: {student.FirstName}): ");
+            var firstName = Console.ReadLine() ?? string.Empty;
+            if (string.IsNullOrEmpty(firstName))
+            {
+                firstName = student.FirstName;
+            }
+
+            AnsiConsole.Markup($"Enter new last name (current: {student.LastName}): ");
+            var lastName = Console.ReadLine() ?? string.Empty;
+            if (string.IsNullOrEmpty(lastName))
+            {
+                lastName = student.LastName;
+            }
+
+            AnsiConsole.Markup($"Enter new email (current: {student.Email}): ");
+            var email = Console.ReadLine() ?? string.Empty;
+            if (string.IsNullOrEmpty(email))
+            {
+                email = student.Email;
+            }
+
+            student.FirstName = firstName;
+            student.LastName = lastName;
+            student.Email = email;
+            student.RegistrationDate = DateTime.Now;
+
+            await studentRepo.UpdateStudentAsync(student);
+            AnsiConsole.MarkupLine("[green]Student updated successfully.[/]");
+        }
+
+        private static async Task DeleteStudentAsync(StudentRepository studentRepo)
+        {
+            AnsiConsole.Markup("Enter student ID to delete: ");
+            var input = Console.ReadLine() ?? string.Empty;
+            if (InputHelper.CheckForSpecialCommands(input))
+            {
+                return;
+            }
+
+            if (!int.TryParse(input, out var studentId))
+            {
+                AnsiConsole.MarkupLine("[red]Invalid student ID.[/]");
+                return;
+            }
+
+            await studentRepo.DeleteStudentAsync(studentId);
+            AnsiConsole.MarkupLine("[green]Student deleted successfully.[/]");
+        }
+
+        private static async Task ExportStudentsToCsvAsync(StudentRepository studentRepo)
+        {
+            var students = await studentRepo.GetAllStudentsAsync();
+            if (students.Count == 0)
+            {
+                AnsiConsole.MarkupLine("[yellow]There are no students to export.[/]");
+                return;
+            }
+
+            var filePath = "students.csv";
+            ExportHelper.ExportToCsv(students, filePath);
+            AnsiConsole.MarkupLine($"[green]Students exported to {filePath}[/]");
+        }
+
+        private static async Task ExportStudentsToJsonAsync(StudentRepository studentRepo)
+        {
+            var students = await studentRepo.GetAllStudentsAsync();
+            if (students.Count == 0)
+            {
+                AnsiConsole.MarkupLine("[yellow]There are no students to export.[/]");
+                return;
+            }
+
+            var filePath = "students.json";
+            ExportHelper.ExportToJson(students, filePath);
+            AnsiConsole.MarkupLine($"[green]Students exported to {filePath}[/]");
         }
     }
 }

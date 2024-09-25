@@ -1,0 +1,23 @@
+[
+  {
+    "Id": 1,
+    "FirstName": "John",
+    "LastName": "Doe",
+    "Email": "john.doe@example.com",
+    "RegistrationDate": "2024-09-19T00:00:00"
+  },
+  {
+    "Id": 3,
+    "FirstName": "Jim",
+    "LastName": "Jones",
+    "Email": "jimjones@gmail.com",
+    "RegistrationDate": "2024-09-23T00:00:00"
+  },
+  {
+    "Id": 4,
+    "FirstName": "Sue",
+    "LastName": "Bird",
+    "Email": "subird@gmail.com",
+    "RegistrationDate": "2024-09-24T00:00:00"
+  }
+]

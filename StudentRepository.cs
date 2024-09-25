@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Configuration;
 using Npgsql;
 
 namespace sqltest
@@ -78,7 +79,7 @@ namespace sqltest
                 cmd.Parameters.AddWithValue("Id", id);
                 await using var reader = await cmd.ExecuteReaderAsync();
 
-                if(await reader.ReadAsync())
+                if (await reader.ReadAsync())
                 {
                     return new Student
                     {
@@ -92,13 +93,97 @@ namespace sqltest
             }
             catch (NpgsqlException ex)
             {
-                Console.WriteLine($"Databse error: {ex.Message}");
+                Console.WriteLine($"Database error: {ex.Message}");
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
-                Console.WriteLine($"An error occured: {ex.Message}");
+                Console.WriteLine($"An error occurred: {ex.Message}");
             }
+
             return null;
+        }
+
+        public async Task<List<Student>> SearchStudentsByNameAsync(string name)
+        {
+            var students = new List<Student>();
+
+            try
+            {
+                await using var dataSource = NpgsqlDataSource.Create(connectionString);
+                await using var cmd = dataSource.CreateCommand("SELECT * FROM students WHERE first_name ILIKE @Name OR last_name ILIKE @Name");
+                cmd.Parameters.AddWithValue("Name", $"%{name}%");
+                await using var reader = await cmd.ExecuteReaderAsync();
+
+                while (await reader.ReadAsync())
+                {
+                    students.Add(new Student
+                    {
+                        Id = reader.GetInt32(0),
+                        FirstName = reader.GetString(1),
+                        LastName = reader.GetString(2),
+                        Email = reader.GetString(3),
+                        RegistrationDate = reader.GetDateTime(4)
+                    });
+                }
+            }
+            catch (NpgsqlException ex)
+            {
+                Console.WriteLine($"Database error: {ex.Message}");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"An error occurred: {ex.Message}");
+            }
+
+            return students;
+        }
+
+        public async Task UpdateStudentAsync(Student student)
+        {
+            try
+            {
+                await using var dataSource = NpgsqlDataSource.Create(connectionString);
+                await using var cmd = dataSource.CreateCommand(@"
+                    UPDATE students SET first_name = @FirstName, last_name = @LastName, email = @Email, registration_date = @RegistrationDate
+                    WHERE id = @Id");
+                cmd.Parameters.AddWithValue("Id", student.Id);
+                cmd.Parameters.AddWithValue("FirstName", student.FirstName);
+                cmd.Parameters.AddWithValue("LastName", student.LastName);
+                cmd.Parameters.AddWithValue("Email", student.Email);
+                cmd.Parameters.AddWithValue("RegistrationDate", student.RegistrationDate);
+                await cmd.ExecuteNonQueryAsync();
+
+                Console.WriteLine("Student updated successfully.");
+            }
+            catch (NpgsqlException ex)
+            {
+                Console.WriteLine($"Database error: {ex.Message}");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"An error occurred: {ex.Message}");
+            }
+        }
+
+        public async Task DeleteStudentAsync(int id)
+        {
+            try
+            {
+                await using var dataSource = NpgsqlDataSource.Create(connectionString);
+                await using var cmd = dataSource.CreateCommand("DELETE FROM students WHERE id = @Id");
+                cmd.Parameters.AddWithValue("Id", id);
+                await cmd.ExecuteNonQueryAsync();
+
+                Console.WriteLine("Student deleted successfully.");
+            }
+            catch (NpgsqlException ex)
+            {
+                Console.WriteLine($"Database error: {ex.Message}");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"An error occurred: {ex.Message}");
+            }
         }
     }
 }
