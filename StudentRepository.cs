@@ -69,7 +69,7 @@ namespace sqltest
             return students;
         }
 
-        public async Task<Studnet?> GetStudentByIdAsync(int id)
+        public async Task<Student?> GetStudentByIdAsync(int id)
         {
             try
             {

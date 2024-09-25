@@ -216,6 +216,50 @@ namespace sqltest
 
         private static async Task EnrollStudentAsync(EnrollmentRepository enrollmentRepo, StudentRepository studentRepo, CourseRepository courseRepo)
         {
+            // Display the list of students
+            var students = await studentRepo.GetAllStudentsAsync();
+            if (students.Count == 0)
+            {
+                AnsiConsole.MarkupLine("[yellow]There are no students to enroll.[/]");
+                return;
+            }
+
+            var studentTable = new Table();
+            studentTable.AddColumn("ID");
+            studentTable.AddColumn("First Name");
+            studentTable.AddColumn("Last Name");
+            studentTable.AddColumn("Email");
+
+            foreach (var stud in students)
+            {
+                studentTable.AddRow(stud.Id.ToString(), stud.FirstName, stud.LastName, stud.Email);
+            }
+
+            AnsiConsole.Write(studentTable);
+
+            // Display the list of courses
+            var courses = await courseRepo.GetAllCoursesAsync();
+            if (courses.Count == 0)
+            {
+                AnsiConsole.MarkupLine("[yellow]There are no courses to enroll in.[/]");
+                return;
+            }
+
+            var courseTable = new Table();
+            courseTable.AddColumn("ID");
+            courseTable.AddColumn("Name");
+            courseTable.AddColumn("Duration");
+            courseTable.AddColumn("Description");
+            courseTable.AddColumn("Credits");
+
+            foreach (var crs in courses)
+            {
+                courseTable.AddRow(crs.Id.ToString(), crs.Name, crs.Duration.ToString(), crs.Description, crs.Credits.ToString());
+            }
+
+            AnsiConsole.Write(courseTable);
+
+            // Enroll the student in the course
             AnsiConsole.Markup("Enter student ID (or type 'menu' to return to main menu): ");
             var studentIdInput = Console.ReadLine() ?? string.Empty;
             if (InputHelper.CheckForSpecialCommands(studentIdInput))
@@ -251,6 +295,27 @@ namespace sqltest
 
             await enrollmentRepo.EnrollStudentAsync(enrollment);
             AnsiConsole.MarkupLine("[green]Student enrolled successfully.[/]");
+
+            // Fetch and display student and course details
+            var enrolledStudent = await studentRepo.GetStudentByIdAsync(studentId);
+            var enrolledCourse = await courseRepo.GetCourseByIdAsync(courseId);
+
+            if (enrolledStudent != null && enrolledCourse != null)
+            {
+                var table = new Table();
+                table.AddColumn("Student ID");
+                table.AddColumn("Student Name");
+                table.AddColumn("Course ID");
+                table.AddColumn("Course Name");
+
+                table.AddRow(enrolledStudent.Id.ToString(), $"{enrolledStudent.FirstName} {enrolledStudent.LastName}", enrolledCourse.Id.ToString(), enrolledCourse.Name);
+
+                AnsiConsole.Write(table);
+            }
+            else
+            {
+                AnsiConsole.MarkupLine("[red]Failed to fetch student or course details.[/]");
+            }
         }
 
         private static async Task ViewAllStudentsAsync(StudentRepository studentRepo)
