@@ -37,7 +37,9 @@ namespace sqltest
                         student_id INT NOT NULL,
                         course_id INT NOT NULL,
                         enrolled_date DATE NOT NULL,
-                        PRIMARY KEY(student_id, course_id)
+                        PRIMARY KEY(student_id, course_id),
+                        FOREIGN KEY(student_id) REFERENCES students(id),
+                        FOREIGN KEY(course_id) REFERENCES courses(id)
                     )"
                 };
 
@@ -60,7 +62,5 @@ namespace sqltest
                 Console.WriteLine($"An error occurred: {ex.Message}");
             }
         }
-
-        
     }
 }

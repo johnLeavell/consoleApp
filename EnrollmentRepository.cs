@@ -12,7 +12,6 @@ namespace sqltest
         public EnrollmentRepository(IConfiguration configuration)
         {
             connectionString = "Host=localhost;Username=postgres;Password=password;Database=postgres";
-                //?? throw new InvalidOperationException("Connection string not found in configuration.");
         }
 
         public async Task EnrollStudentAsync(Enrollment enrollment)
@@ -46,7 +45,13 @@ namespace sqltest
             try
             {
                 await using var dataSource = NpgsqlDataSource.Create(connectionString);
-                await using var cmd = dataSource.CreateCommand("SELECT * FROM enrollments");
+                await using var cmd = dataSource.CreateCommand(@"
+                    SELECT e.student_id, (s.first_name || ' ' || s.last_name) AS student_name, e.course_id, c.name AS course_name, e.enrolled_date
+                    FROM enrollments e
+                    JOIN students s ON e.student_id = s.id
+                    JOIN courses c ON e.course_id = c.id
+                    ");
+                
                 await using var reader = await cmd.ExecuteReaderAsync();
 
                 while (await reader.ReadAsync())
@@ -54,8 +59,10 @@ namespace sqltest
                     enrollments.Add(new Enrollment
                     {
                         StudentId = reader.GetInt32(0),
-                        CourseId = reader.GetInt32(1),
-                        EnrolledDate = reader.GetDateTime(2)
+                        StudentName = reader.GetString(1),
+                        CourseId = reader.GetInt32(2),
+                        CourseName = reader.GetString(3),
+                        EnrolledDate = reader.GetDateTime(4)
                     });
                 }
             }

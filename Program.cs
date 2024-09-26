@@ -402,12 +402,14 @@ namespace sqltest
 
             var table = new Table();
             table.AddColumn("Student ID");
+            table.AddColumn("Student Name");
             table.AddColumn("Course ID");
+            table.AddColumn("Course Name");
             table.AddColumn("Enrolled Date");
 
             foreach (var enrollment in enrollments)
             {
-                table.AddRow(enrollment.StudentId.ToString(), enrollment.CourseId.ToString(), enrollment.EnrolledDate.ToString());
+                table.AddRow(enrollment.StudentId.ToString(), enrollment.StudentName, enrollment.CourseId.ToString(), enrollment.CourseName, enrollment.EnrolledDate.ToString());
             }
 
             AnsiConsole.Write(table);
